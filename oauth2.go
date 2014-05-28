@@ -208,6 +208,7 @@ func login(t *oauth.Transport, s sessions.Session, w http.ResponseWriter, r *htt
 func logout(t *oauth.Transport, s sessions.Session, w http.ResponseWriter, r *http.Request) {
 	next := extractPath(r.URL.Query().Get(keyNextPage))
 	s.Delete(keyToken)
+	s.Clear()
 	http.Redirect(w, r, next, codeRedirect)
 }
 
