@@ -56,6 +56,11 @@ type Options struct {
 
 	AuthUrl  string
 	TokenUrl string
+
+	LoginUrl    string
+	LogoutUrl   string
+	CallbackUrl string
+	ErrorUrl    string
 }
 
 // Represents a container that contains
@@ -142,14 +147,18 @@ func NewOAuth2Provider(opts *Options) martini.Handler {
 		Transport: http.DefaultTransport,
 	}
 
+	LoginUrl := firstNonEmptyString(opts.LoginUrl, PathLogin)
+	LogoutUrl := firstNonEmptyString(opts.LogoutUrl, PathLogout)
+	CallbackUrl := firstNonEmptyString(opts.CallbackUrl, PathCallback)
+
 	return func(s sessions.Session, c martini.Context, w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			switch r.URL.Path {
-			case PathLogin:
+			case LoginUrl:
 				login(transport, s, w, r)
-			case PathLogout:
+			case LogoutUrl:
 				logout(transport, s, w, r)
-			case PathCallback:
+			case CallbackUrl:
 				handleOAuth2Callback(transport, s, w, r)
 			}
 		}
@@ -230,4 +239,11 @@ func extractPath(next string) string {
 		return "/"
 	}
 	return n.Path
+}
+
+func firstNonEmptyString(fst string, snd string) string {
+	if fst != "" {
+		return fst
+	}
+	return snd
 }
