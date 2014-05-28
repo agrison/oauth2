@@ -61,6 +61,8 @@ type Options struct {
 	LogoutUrl   string
 	CallbackUrl string
 	ErrorUrl    string
+
+	LoginCallback Callback
 }
 
 // Represents a container that contains
@@ -72,6 +74,8 @@ type Tokens interface {
 	ExpiryTime() time.Time
 	ExtraData() map[string]string
 }
+
+type Callback func(Tokens)
 
 type token struct {
 	oauth.Token
@@ -159,7 +163,7 @@ func NewOAuth2Provider(opts *Options) martini.Handler {
 			case LogoutUrl:
 				logout(transport, s, w, r)
 			case CallbackUrl:
-				handleOAuth2Callback(transport, s, w, r)
+				handleOAuth2Callback(transport, s, opts.LoginCallback, w, r)
 			}
 		}
 
@@ -207,7 +211,7 @@ func logout(t *oauth.Transport, s sessions.Session, w http.ResponseWriter, r *ht
 	http.Redirect(w, r, next, codeRedirect)
 }
 
-func handleOAuth2Callback(t *oauth.Transport, s sessions.Session, w http.ResponseWriter, r *http.Request) {
+func handleOAuth2Callback(t *oauth.Transport, s sessions.Session, c Callback, w http.ResponseWriter, r *http.Request) {
 	next := extractPath(r.URL.Query().Get("state"))
 	code := r.URL.Query().Get("code")
 	tk, err := t.Exchange(code)
@@ -221,6 +225,10 @@ func handleOAuth2Callback(t *oauth.Transport, s sessions.Session, w http.Respons
 	val, _ := json.Marshal(tk)
 	s.Set(keyToken, val)
 	http.Redirect(w, r, next, codeRedirect)
+
+	if c != nil {
+		c(unmarshallToken(s))
+	}
 }
 
 func unmarshallToken(s sessions.Session) (t *token) {
