@@ -225,11 +225,12 @@ func handleOAuth2Callback(t *oauth.Transport, s sessions.Session, c Callback, w 
 	// Store the credentials in the session.
 	val, _ := json.Marshal(tk)
 	s.Set(keyToken, val)
-	http.Redirect(w, r, next, codeRedirect)
 
 	if c != nil {
 		c(unmarshallToken(s), t, s, w, r)
 	}
+
+	http.Redirect(w, r, next, codeRedirect)
 }
 
 func unmarshallToken(s sessions.Session) (t *token) {
