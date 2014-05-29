@@ -75,7 +75,7 @@ type Tokens interface {
 	ExtraData() map[string]string
 }
 
-type Callback func(Tokens)
+type Callback func(Tokens, *oauth.Transport, sessions.Session, http.ResponseWriter, *http.Request)
 
 type token struct {
 	oauth.Token
@@ -228,7 +228,7 @@ func handleOAuth2Callback(t *oauth.Transport, s sessions.Session, c Callback, w 
 	http.Redirect(w, r, next, codeRedirect)
 
 	if c != nil {
-		c(unmarshallToken(s))
+		c(unmarshallToken(s), t, s, w, r)
 	}
 }
 
